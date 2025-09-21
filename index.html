@@ -1045,213 +1045,78 @@
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 
     <script>
-        // JavaScript для бургер-меню
-        const burgerMenu = document.getElementById('burgerMenu');
-        const navLinks = document.getElementById('navLinks');
-        const header = document.getElementById('header');
-        const navLinkItems = document.querySelectorAll('.nav-link');
-        const sections = document.querySelectorAll('section');
-        const contactForm = document.getElementById('contactForm');
-        const notification = document.getElementById('notification');
-        const modal = document.getElementById('galleryModal');
-        const modalImg = document.getElementById('modalImage');
-        const closeModal = document.querySelector('.close');
-        const galleryItems = document.querySelectorAll('.gallery-item');
+    // Инициализация EmailJS с вашими ключами
+    emailjs.init("n2GsL0JkWenu1kJPV");
+    
+    // Обработчик отправки формы через EmailJS
+    contactForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
         
-        // Элементы модального окна благодарности
-        const thanksModal = document.getElementById('thanksModal');
-        const closeThanksBtn = document.getElementById('closeThanks');
-        const thanksClose = document.querySelector('.thanks-close');
+        // Показываем уведомление о загрузке
+        notification.textContent = 'Отправляем вашу заявку...';
+        notification.style.backgroundColor = '#2196F3';
+        notification.classList.add('show');
         
-        // Бургер-меню
-        burgerMenu.addEventListener('click', () => {
-            burgerMenu.classList.toggle('active');
-            navLinks.classList.toggle('active');
-        });
+        const formData = {
+            user_name: document.getElementById('name').value,
+            user_phone: document.getElementById('phone').value,
+            user_email: document.getElementById('email').value || 'Не указан',
+            message: document.getElementById('message').value || 'Не указано',
+            date: new Date().toLocaleString('ru-RU'),
+            site: 'Братство КУДО'
+        };
         
-        // Закрытие меню при клике на ссылку
-        navLinkItems.forEach(link => {
-            link.addEventListener('click', () => {
-                navLinks.classList.remove('active');
-                burgerMenu.classList.remove('active');
-            });
-        });
+        console.log('Отправка данных:', formData);
         
-        // Закрытие меню при клике вне его области
-        document.addEventListener('click', (e) => {
-            if (!burgerMenu.contains(e.target) && !navLinks.contains(e.target)) {
-                navLinks.classList.remove('active');
-                burgerMenu.classList.remove('active');
+        try {
+            // Проверяем наличие обязательных полей
+            if (!formData.user_name || !formData.user_phone) {
+                throw new Error('Заполните имя и телефон');
             }
-        });
-        
-        // Изменение хедера при скролле
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 50) {
-                header.classList.add('scrolled');
+            
+            // Отправляем через EmailJS с ВАШИМИ данными
+            const response = await emailjs.send(
+                'service_hie0v7t',  // Ваш Service ID
+                'y226gdv',          // Ваш Template ID (из URL!)
+                formData
+            );
+            
+            console.log('Успешный ответ:', response);
+            
+            if (response.status === 200) {
+                // Успешная отправка
+                notification.textContent = '✅ Заявка отправлена! Мы свяжемся с вами в ближайшее время.';
+                notification.style.backgroundColor = '#4CAF50';
+                contactForm.reset();
+                
+                // Показываем модальное окно
+                showThanksModal();
             } else {
-                header.classList.remove('scrolled');
+                throw new Error('Ошибка сервера: ' + response.status);
+            }
+        } catch (error) {
+            console.error('Ошибка отправки:', error);
+            
+            // Конкретные ошибки
+            if (error.message.includes('service not found')) {
+                notification.textContent = '❌ Ошибка Service ID. Проверьте настройки.';
+            } else if (error.message.includes('template not found')) {
+                notification.textContent = '❌ Ошибка Template ID. Используйте y226gdv';
+            } else if (error.message.includes('authentication')) {
+                notification.textContent = '❌ Ошибка аутентификации. Проверьте Public Key.';
+            } else {
+                notification.textContent = '❌ Ошибка: ' + error.message;
             }
             
-            // Активный пункт меню при скролле
-            let current = '';
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop;
-                const sectionHeight = section.clientHeight;
-                if (pageYOffset >= (sectionTop - 200)) {
-                    current = section.getAttribute('id');
-                }
-            });
-            
-            navLinkItems.forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href').includes(current)) {
-                    link.classList.add('active');
-                }
-            });
-            
-            // Анимация появления секций
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop;
-                const sectionHeight = section.clientHeight;
-                if (pageYOffset >= (sectionTop - sectionHeight / 2)) {
-                    section.classList.add('visible');
-                }
-            });
-        });
-        
-        // Функция для показа модального окна благодарности
-        function showThanksModal() {
-            thanksModal.style.display = 'block';
-            document.body.style.overflow = 'hidden';
+            notification.style.backgroundColor = '#F44336';
         }
         
-        // Функция для скрытия модального окна благодарности
-        function hideThanksModal() {
-            thanksModal.style.display = 'none';
-            document.body.style.overflow = '';
-        }
-        
-        // Обработчики закрытия модального окна благодарности
-        closeThanksBtn.addEventListener('click', hideThanksModal);
-        thanksClose.addEventListener('click', hideThanksModal);
-        
-        // Закрытие при клике вне окна благодарности
-        thanksModal.addEventListener('click', (e) => {
-            if (e.target === thanksModal) {
-                hideThanksModal();
-            }
-        });
-        
-        // Закрытие по ESC
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && thanksModal.style.display === 'block') {
-                hideThanksModal();
-            }
-        });
-        
-        // Обработчик отправки формы через EmailJS
-contactForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    // Показываем уведомление о загрузке
-    notification.textContent = 'Отправляем вашу заявку...';
-    notification.style.backgroundColor = '#2196F3';
-    notification.classList.add('show');
-    
-    const formData = {
-        user_name: document.getElementById('name').value,
-        user_phone: document.getElementById('phone').value,
-        user_email: document.getElementById('email').value || 'Не указан',
-        message: document.getElementById('message').value || 'Не указано',
-        date: new Date().toLocaleString('ru-RU'),
-        site: 'Братство КУДО'
-    };
-    
-    console.log('Данные формы:', formData);
-    console.log('Public Key:', emailjs.initParams.publicKey);
-    console.log('Service ID:', 'service_hie0v7t'); // Замените на ваш
-    console.log('Template ID:', 'y226gdv');
-    
-    try {
-        // Отправляем через EmailJS
-        const response = await emailjs.send(
-            'service_hie0v7t',    // ЗАМЕНИТЕ на ваш Service ID
-            'y226gdv',            // Ваш Template ID
-            formData
-        );
-        
-        console.log('EmailJS ответ:', response);
-        
-        if (response.status === 200) {
-            // Успешная отправка
-            notification.textContent = '✅ Заявка отправлена! Мы свяжемся с вами в ближайшее время.';
-            notification.style.backgroundColor = '#4CAF50';
-            contactForm.reset();
-            
-            // Показываем модальное окно
-            showThanksModal();
-        } else {
-            throw new Error('Ошибка отправки: ' + response.status);
-        }
-    } catch (error) {
-        console.error('Полная ошибка EmailJS:', error);
-        notification.textContent = '❌ Ошибка отправки: ' + error.message;
-        notification.style.backgroundColor = '#F44336';
-    }
-    
-    // Скрываем уведомление через 5 секунд
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, 5000);
-});
-        
-        // Модальное окно для галереи
-        galleryItems.forEach(item => {
-            item.addEventListener('click', () => {
-                modal.style.display = "block";
-                modalImg.src = item.getAttribute('data-src');
-            });
-        });
-        
-        closeModal.addEventListener('click', () => {
-            modal.style.display = "none";
-        });
-        
-        window.addEventListener('click', (e) => {
-            if (e.target == modal) {
-                modal.style.display = "none";
-            }
-        });
-        
-        // Ленивая загрузка изображений
-        if ('IntersectionObserver' in window) {
-            const lazyImages = document.querySelectorAll('.lazy-load');
-            
-            const imageObserver = new IntersectionObserver((entries, observer) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = entry.target;
-                        img.src = img.dataset.src;
-                        img.classList.add('loaded');
-                        imageObserver.unobserve(img);
-                    }
-                });
-            });
-            
-            lazyImages.forEach(img => {
-                imageObserver.observe(img);
-            });
-        }
-        
-        // Инициализация анимаций при загрузке
-        window.addEventListener('load', () => {
-            sections.forEach(section => {
-                if (window.pageYOffset >= (section.offsetTop - window.innerHeight / 2)) {
-                    section.classList.add('visible');
-                }
-            });
-        });
-    </script>
+        // Скрываем уведомление через 5 секунд
+        setTimeout(() => {
+            notification.classList.remove('show');
+        }, 5000);
+    });
+</script>
 </body>
 </html>
+
